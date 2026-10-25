@@ -140,8 +140,8 @@ SITES = [
     },
     {
         "name": "NBA매니아",
-        "boards": [("자유게시판", "https://nbamania.com/g2/bbs/board.php?bo_table=freeboard")],
-        "pattern": r"nbamania\.com/.*wr_id=\d+",
+        "boards": [("자유게시판", "https://mania.kr/g2/bbs/board.php?bo_table=freeboard")],
+        "pattern": r"(nbamania\.com|mania\.kr)/.*wr_id=\d+",
         "body": "#bo_v_con",
     },
     {
