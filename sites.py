@@ -19,11 +19,15 @@
 
 SITES = [
     {
-               "boards": [
+        "name": "디시인사이드",
+        "boards": [
             ("실시간 베스트", "https://gall.dcinside.com/board/lists/?id=dcbest"),
             ("오티켓", "https://gall.dcinside.com/mgallery/board/lists/?id=oticket"),
             ("롯데리아", "https://gall.dcinside.com/board/lists/?id=lotteria"),
         ],
+        "pattern": r"gall\.dcinside\.com/(mgallery/|mini/)?board/view/",
+        "body": ".write_div",
+    },
     {
         "name": "뽐뿌",
         "boards": [
