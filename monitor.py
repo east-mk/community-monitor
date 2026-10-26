@@ -7,6 +7,7 @@
   3. 제목에 없으면 그 글의 본문 페이지를 열어 본문에서 키워드를 찾는다.
   4. 한 번 확인한 글은 seen.json에 기억해서 다시 열지 않는다.
   5. 일치한 글만 구글 시트에 추가한다.
+  + 구글 뉴스 검색 결과에서 제목에 키워드가 있는 글을 별도 탭에 기록한다 (search_sources.py).
 
 사용법
   python monitor.py --test            # 시트/seen.json을 건드리지 않고 사이트별 상태만 점검
@@ -17,7 +18,11 @@
   SHEET_ID                 구글 시트 주소의 /d/ 와 /edit 사이 문자열
   GOOGLE_CREDENTIALS       서비스 계정 JSON 내용 전체 (GitHub Secret용)
   GOOGLE_CREDENTIALS_FILE  또는 서비스 계정 JSON 파일 경로 (로컬용)
-  WORKSHEET_NAME           (선택) 탭 이름, 기본 "감시결과"
+  WORKSHEET_NAME           (선택) 커뮤니티 탭 이름, 기본 "커뮤니티 모니터링"
+  SEARCH_WORKSHEET_NAME    (선택) 검색 탭 이름, 기본 "구글 모니터링"
+  SEARCH_ENABLED           (선택) "0"이면 검색 수집을 끔
+  NAVER_CLIENT_ID / NAVER_CLIENT_SECRET  (선택) 네이버 검색 API 키
+  KAKAO_REST_KEY           (선택) 카카오(다음) 검색 API 키
   SEEN_FILE                (선택) 확인한 글 기록 파일, 기본 "seen.json"
   TIME_BUDGET              (선택) 본문 확인에 쓸 최대 시간(초), 기본 420
   MAX_BODY_PER_SITE        (선택) 사이트당 1회 실행에서 열어볼 본문 최대 개수, 기본 60
@@ -269,27 +274,41 @@ def scan(keywords, seen, fails, test=False):
     return hits, new_seen, new_fails
 
 
-def open_worksheet():
+_SPREADSHEET = None
+
+
+def _spreadsheet():
+    global _SPREADSHEET
+    if _SPREADSHEET is None:
+        import gspread
+
+        if os.environ.get("GOOGLE_CREDENTIALS"):
+            gc = gspread.service_account_from_dict(json.loads(os.environ["GOOGLE_CREDENTIALS"]))
+        elif os.environ.get("GOOGLE_CREDENTIALS_FILE"):
+            gc = gspread.service_account(filename=os.environ["GOOGLE_CREDENTIALS_FILE"])
+        else:
+            sys.exit("GOOGLE_CREDENTIALS 또는 GOOGLE_CREDENTIALS_FILE 환경변수가 필요합니다.")
+        _SPREADSHEET = gc.open_by_key(os.environ["SHEET_ID"])
+    return _SPREADSHEET
+
+
+def open_worksheet(name=None, header=None):
+    """탭을 열고(없으면 만들고) 1행 헤더·고정·필터를 맞춘다."""
     import gspread
 
-    if os.environ.get("GOOGLE_CREDENTIALS"):
-        gc = gspread.service_account_from_dict(json.loads(os.environ["GOOGLE_CREDENTIALS"]))
-    elif os.environ.get("GOOGLE_CREDENTIALS_FILE"):
-        gc = gspread.service_account(filename=os.environ["GOOGLE_CREDENTIALS_FILE"])
-    else:
-        sys.exit("GOOGLE_CREDENTIALS 또는 GOOGLE_CREDENTIALS_FILE 환경변수가 필요합니다.")
-    sh = gc.open_by_key(os.environ["SHEET_ID"])
-    name = os.environ.get("WORKSHEET_NAME", "커뮤니티 모니터링")
+    name = name or os.environ.get("WORKSHEET_NAME", "커뮤니티 모니터링")
+    header = header or HEADER
+    sh = _spreadsheet()
     try:
         ws = sh.worksheet(name)
     except gspread.WorksheetNotFound:
-        ws = sh.add_worksheet(title=name, rows=2000, cols=len(HEADER))
-    if ws.col_count < len(HEADER):
-        ws.resize(cols=len(HEADER))
-    if ws.row_values(1) != HEADER:
-        ws.update(values=[HEADER], range_name="A1:G1")
+        ws = sh.add_worksheet(title=name, rows=2000, cols=len(header))
+    if ws.col_count < len(header):
+        ws.resize(cols=len(header))
+    if ws.row_values(1) != header:
+        ws.update(values=[header], range_name=f"A1:{chr(64 + len(header))}1")
         ws.freeze(rows=1)
-        ws.set_basic_filter()  # 1행에 필터 버튼 생성 -> 커뮤니티/게시판 열에서 골라 보기
+        ws.set_basic_filter()  # 1행에 필터 버튼 생성 -> 열마다 골라 보기
     return ws
 
 
@@ -312,7 +331,56 @@ def write_new(ws, found):
     print(f"시트에 새 글 {len(rows)}개 추가")
 
 
+SEARCH_HEADER = ["발견시각", "작성시각", "사이트", "분류", "제목", "키워드", "링크"]
+SEARCH_LINK_COL = 7  # G열
+
+
+def write_search(ws, found):
+    existing = set(ws.col_values(SEARCH_LINK_COL)[1:])
+    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+    rows, done = [], set()
+    for site, kind, title, kws, link, when in found:
+        if link in existing or link in done:
+            continue
+        done.add(link)
+        safe_title = title.replace('"', '""')
+        safe_link = link.replace('"', "%22")
+        rows.append(
+            [now, when, site, kind, f'=HYPERLINK("{safe_link}","{safe_title}")', kws, link]
+        )
+    # 작성시각이 최신인 글이 위로 오게 정렬 (작성시각 없는 건 뒤로)
+    rows.sort(key=lambda r: r[1] or "", reverse=True)
+    if rows:
+        ws.insert_rows(rows, row=2, value_input_option="USER_ENTERED")
+    print(f"[{ws.title}] 새 글 {len(rows)}개 추가")
+
+
+def run_search(keywords, test):
+    """검색(현재 구글 뉴스) -> '구글 모니터링' 탭. 실패해도 커뮤니티 수집은 계속."""
+    if os.environ.get("SEARCH_ENABLED", "1") == "0":
+        return
+    print("=== 구글 뉴스 ===")
+    try:
+        from search_sources import search_all
+
+        found = search_all(keywords, test=test)
+        if test:
+            print(f"[테스트] 검색 일치 {len(found)}개 (시트에는 쓰지 않음)\n")
+            return
+        name = os.environ.get("SEARCH_WORKSHEET_NAME", "구글 모니터링")
+        if found:
+            write_search(open_worksheet(name, SEARCH_HEADER), found)
+        else:
+            print("검색에서 새로 일치한 글 없음")
+    except Exception as e:
+        print(f"[실패] 검색 수집 전체: {type(e).__name__}: {str(e)[:150]}")
+    print()
+
+
 def run_once(keywords, test):
+    run_search(keywords, test)
+
+    print("=== 커뮤니티 ===")
     seen, fails = ({}, {}) if test else load_seen()
     hits, new_seen, new_fails = scan(keywords, seen, fails, test=test)
 
