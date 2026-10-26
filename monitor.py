@@ -279,7 +279,7 @@ def open_worksheet():
     else:
         sys.exit("GOOGLE_CREDENTIALS 또는 GOOGLE_CREDENTIALS_FILE 환경변수가 필요합니다.")
     sh = gc.open_by_key(os.environ["SHEET_ID"])
-    name = os.environ.get("WORKSHEET_NAME", "감시결과")
+    name = os.environ.get("WORKSHEET_NAME", "커뮤니티 모니터링")
     try:
         ws = sh.worksheet(name)
     except gspread.WorksheetNotFound:
