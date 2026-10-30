@@ -77,8 +77,9 @@ def norm(text):
 
 
 def find_keywords(text, keywords):
-    n = norm(text)
-    return [k for k in keywords if norm(k) in n]
+    # 띄어쓰기를 모두 무시하고 비교 ("스푼유출", "스푼  유출" 모두 "스푼 유출"에 일치)
+    n = re.sub(r"\s+", "", text).lower()
+    return [k for k in keywords if re.sub(r"\s+", "", k).lower() in n]
 
 
 def fetch(session, url, referer=None):
@@ -159,11 +160,16 @@ def process_site(site, keywords, seen, fails, deadline, test):
         sample_msg = None
 
         for link, title in posts.items():
+            kws = find_keywords(title, keywords)
+
             if link in seen or link in out["seen"]:
                 old += 1
+                if kws:
+                    # 이미 확인한 글이라도 제목에 키워드가 있으면 다시 넘김
+                    # (나중에 제목이 수정된 경우 대비. 시트에 이미 있는 링크는 시트 쓰기에서 걸러짐)
+                    out["hits"].append((site["name"], board_name, title, ", ".join(kws), "제목", link))
                 continue
 
-            kws = find_keywords(title, keywords)
             if kws:
                 out["hits"].append((site["name"], board_name, title, ", ".join(kws), "제목", link))
                 out["seen"][link] = now

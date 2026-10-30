@@ -71,8 +71,9 @@ def _norm(text):
 
 
 def _match(title, keywords):
-    n = _norm(title)
-    return [k for k in keywords if _norm(k) in n]
+    # 띄어쓰기를 모두 무시하고 비교
+    n = re.sub(r"\s+", "", title).lower()
+    return [k for k in keywords if re.sub(r"\s+", "", k).lower() in n]
 
 
 def _fmt(dt):
