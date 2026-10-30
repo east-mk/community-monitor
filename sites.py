@@ -24,6 +24,7 @@ SITES = [
             ("실시간 베스트", "https://gall.dcinside.com/board/lists/?id=dcbest"),
             ("오티켓", "https://gall.dcinside.com/mgallery/board/lists/?id=oticket"),
             ("롯데리아", "https://gall.dcinside.com/board/lists/?id=lotteria"),
+            ("롯데시네마", "https://gall.dcinside.com/mgallery/board/lists/?id=cinemalotte")
         ],
         "pattern": r"gall\.dcinside\.com/(mgallery/|mini/)?board/view/",
         "body": ".write_div",
@@ -48,13 +49,6 @@ SITES = [
         "boards": [("인기글", "https://www.instiz.net/pt"), ("익명잡담", "https://www.instiz.net/name")],
         "pattern": r"instiz\.net/(pt|name|name_enter)/\d+",
         "body": "#memo_content_1, .memo_content",
-    },
-    {
-        "name": "X(트위터)",
-        "enabled": False,
-        "note": "무료로 안정적인 수집 방법 없음 (공식 API 유료, 비공식 우회는 차단/약관 문제)",
-        "boards": [],
-        "pattern": "",
     },
     {
         "name": "에펨코리아",
@@ -91,14 +85,6 @@ SITES = [
         "boards": [("메인", "https://dmitory.com/")],
         "pattern": r"dmitory\.com/.*\d{5,}",
         "body": "",
-    },
-    {
-        "name": "해연갤",
-        "enabled": False,
-        "note": "해외연예 갤러리의 갤러리 id를 확인해 boards에 URL을 넣고 enabled를 True로 바꾸세요",
-        "boards": [("해외연예", "https://gall.dcinside.com/board/lists/?id=여기에갤러리ID")],
-        "pattern": r"gall\.dcinside\.com/(mgallery/|mini/)?board/view/",
-        "body": ".write_div",
     },
     {
         "name": "82쿡",
@@ -159,20 +145,6 @@ SITES = [
         "boards": [("자유게시판", "https://www.slrclub.com/bbs/zboard.php?id=free")],
         "pattern": r"slrclub\.com/bbs/vx2\.php",
         "body": "#userct",
-    },
-    {
-        "name": "블라인드",
-        "enabled": False,
-        "note": "앱/로그인 중심이라 공개 목록 수집이 사실상 불가",
-        "boards": [],
-        "pattern": "",
-    },
-    {
-        "name": "에브리타임",
-        "enabled": False,
-        "note": "학교 인증 로그인 필요 (수집 불가)",
-        "boards": [],
-        "pattern": "",
     },
     {
         "name": "개드립",
