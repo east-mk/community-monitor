@@ -8,7 +8,7 @@
            본문만 검사해야 사이드바의 인기글 제목 같은 것 때문에 오탐이 안 생깁니다.
            비워 두거나 못 찾으면 페이지 전체에서 추정해서 읽고,
            그때는 시트의 '일치위치'에 '본문(불확실)'로 표시됩니다.
-  enabled  False면 건너뜀
+  enabled  False면 건너뜀 (생략하면 켜짐)
 
 주의: 아래 URL/패턴/본문 선택자는 모두 추정값입니다.
 `python monitor.py --test` 로 돌려서 아래 항목을 확인하세요.
@@ -24,7 +24,7 @@ SITES = [
             ("실시간 베스트", "https://gall.dcinside.com/board/lists/?id=dcbest"),
             ("오티켓", "https://gall.dcinside.com/mgallery/board/lists/?id=oticket"),
             ("롯데리아", "https://gall.dcinside.com/board/lists/?id=lotteria"),
-            ("롯데시네마", "https://gall.dcinside.com/mgallery/board/lists/?id=cinemalotte")
+            ("롯데시네마", "https://gall.dcinside.com/mgallery/board/lists/?id=cinemalotte"),
         ],
         "pattern": r"gall\.dcinside\.com/(mgallery/|mini/)?board/view/",
         "body": ".write_div",
@@ -51,18 +51,6 @@ SITES = [
         "body": "#memo_content_1, .memo_content",
     },
     {
-        "name": "에펨코리아",
-        "boards": [("포텐터짐", "https://www.fmkorea.com/best")],
-        "pattern": r"fmkorea\.com/\d{6,}",
-        "body": ".rd_body article, .rd_body .xe_content",
-    },
-    {
-        "name": "아카라이브",
-        "boards": [("라이브 채널", "https://arca.live/b/live")],
-        "pattern": r"arca\.live/b/\w+/\d+",
-        "body": ".article-body .fr-view, .article-body",
-    },
-    {
         "name": "인벤",
         "boards": [("오픈이슈", "https://www.inven.co.kr/board/webzine/2097")],
         "pattern": r"inven\.co\.kr/board/.+/\d+/\d+",
@@ -79,101 +67,5 @@ SITES = [
         "boards": [("랭킹", "https://pann.nate.com/talk/ranking")],
         "pattern": r"pann\.nate\.com/talk/\d+",
         "body": "#contentArea, .posting",
-    },
-    {
-        "name": "디미토리",
-        "boards": [("메인", "https://dmitory.com/")],
-        "pattern": r"dmitory\.com/.*\d{5,}",
-        "body": "",
-    },
-    {
-        "name": "82쿡",
-        "boards": [("자유게시판", "https://www.82cook.com/entiz/enti.php?bn=15")],
-        "pattern": r"82cook\.com/entiz/read\.php",
-        "body": "#articleBody",
-    },
-    {
-        "name": "클리앙",
-        "boards": [("전체 인기", "https://www.clien.net/service/group/clien_all")],
-        "pattern": r"clien\.net/service/board/\w+/\d+",
-        "body": ".post_article, .post_content",
-    },
-    {
-        "name": "다모앙",
-        "boards": [("자유게시판", "https://damoang.net/free")],
-        "pattern": r"damoang\.net/\w+/\d+",
-        "body": "#bo_v_con, .view-content",
-    },
-    {
-        "name": "퀘이사존",
-        "boards": [("자유게시판", "https://quasarzone.com/bbs/qf_free")],
-        "pattern": r"quasarzone\.com/bbs/\w+/views/\d+",
-        "body": ".view-content, #new_contents",
-    },
-    {
-        "name": "쿨엔조이",
-        "boards": [("자유게시판", "https://coolenjoy.net/bbs/freeboard")],
-        "pattern": r"coolenjoy\.net/bbs/\w+/\d+",
-        "body": "#bo_v_con",
-    },
-    {
-        "name": "엠팍",
-        "boards": [("불펜", "https://mlbpark.donga.com/mp/b.php?b=bullpen")],
-        "pattern": r"mlbpark\.donga\.com/mp/b\.php\?.*id=",
-        "body": "#contentDetail, .ar_txt",
-    },
-    {
-        "name": "사커라인",
-        "boards": [("자유게시판", "https://soccerline.kr/board/free")],
-        "pattern": r"soccerline\.kr/board/\w+/\d+",
-        "body": "",
-    },
-    {
-        "name": "NBA매니아",
-        "boards": [("자유게시판", "https://mania.kr/g2/bbs/board.php?bo_table=freeboard")],
-        "pattern": r"(nbamania\.com|mania\.kr)/.*wr_id=\d+",
-        "body": "#bo_v_con",
-    },
-    {
-        "name": "보배드림",
-        "boards": [("베스트", "https://www.bobaedream.co.kr/list?code=best")],
-        "pattern": r"bobaedream\.co\.kr/view\?code=",
-        "body": ".bodyCont, .article-body",
-    },
-    {
-        "name": "SLR클럽",
-        "boards": [("자유게시판", "https://www.slrclub.com/bbs/zboard.php?id=free")],
-        "pattern": r"slrclub\.com/bbs/vx2\.php",
-        "body": "#userct",
-    },
-    {
-        "name": "개드립",
-        "boards": [("개드립", "https://www.dogdrip.net/dogdrip")],
-        "pattern": r"dogdrip\.net/\d{6,}",
-        "body": "#article_1, .xe_content",
-    },
-    {
-        "name": "웃긴대학",
-        "boards": [("웃긴자료", "https://web.humoruniv.com/board/humor/list.html?table=pds")],
-        "pattern": r"humoruniv\.com/board/(humor/)?read\.html",
-        "body": "#wrap_copy, .body_editor",
-    },
-    {
-        "name": "이토랜드",
-        "boards": [("유머", "https://www.etoland.co.kr/bbs/board.php?bo_table=etohumor01")],
-        "pattern": r"etoland\.co\.kr/bbs/board\.php\?.*wr_id=",
-        "body": "#bo_v_con, .view_content",
-    },
-    {
-        "name": "오늘의유머",
-        "boards": [("베스트오브베스트", "https://www.todayhumor.co.kr/board/list.php?table=bestofbest")],
-        "pattern": r"todayhumor\.co\.kr/board/view\.php",
-        "body": ".viewContent",
-    },
-    {
-        "name": "PGR21",
-        "boards": [("자유게시판", "https://pgr21.com/freedom")],
-        "pattern": r"pgr21\.com/\w+/\d+",
-        "body": ".ct_wrap, .article_body, article",
     },
 ]

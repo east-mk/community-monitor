@@ -25,7 +25,7 @@
   KAKAO_REST_KEY           (선택) 카카오(다음) 검색 API 키
   SEEN_FILE                (선택) 확인한 글 기록 파일, 기본 "seen.json"
   TIME_BUDGET              (선택) 본문 확인에 쓸 최대 시간(초), 기본 420
-  MAX_BODY_PER_SITE        (선택) 사이트당 1회 실행에서 열어볼 본문 최대 개수, 기본 60
+  MAX_BODY_PER_BOARD       (선택) 게시판당 1회 실행에서 열어볼 본문 최대 개수, 기본 40
 """
 import argparse
 import json
@@ -57,8 +57,8 @@ HEADERS = {
 SEEN_FILE = os.environ.get("SEEN_FILE", "seen.json")
 SEEN_TTL = 5 * 24 * 3600          # 확인 기록은 5일 보관
 TIME_BUDGET = int(os.environ.get("TIME_BUDGET", "420"))
-MAX_BODY_PER_SITE = int(os.environ.get("MAX_BODY_PER_SITE", "60"))
-TEST_BODY_PER_SITE = 3            # --test 에서는 사이트당 3개만 열어봄
+MAX_BODY_PER_BOARD = int(os.environ.get("MAX_BODY_PER_BOARD", "40"))
+TEST_BODY_PER_SITE = 3            # --test 에서는 게시판당 3개만 열어봄
 MAX_FETCH_FAILS = 3               # 본문 열기가 3번 연속 실패하면 포기
 
 
@@ -143,10 +143,11 @@ def process_site(site, keywords, seen, fails, deadline, test):
     session = requests.Session()
     session.headers.update(HEADERS)
     selector = site.get("body")
-    budget = TEST_BODY_PER_SITE if test else MAX_BODY_PER_SITE
 
     for board_name, url in site["boards"]:
         label = f"{site['name']} / {board_name}"
+        # 한도는 게시판마다 따로 (사이트 전체에 걸면 첫 게시판이 다 써서 뒤 게시판은 검사를 못 함)
+        budget = TEST_BODY_PER_SITE if test else MAX_BODY_PER_BOARD
         try:
             html = fetch(session, url)
         except Exception as e:  # 한 곳이 실패해도 나머지는 계속
@@ -245,12 +246,11 @@ def save_seen(seen, fails):
 def scan(keywords, seen, fails, test=False):
     """모든 사이트를 훑는다. (hits, 새로 확인한 글, 실패 횟수) 반환"""
     deadline = time.time() + TIME_BUDGET
-    active = []
-    for site in SITES:
-        if site.get("enabled", True):
-            active.append(site)
-        else:
-            print(f"[건너뜀] {site['name']}: {site.get('note', '비활성')}")
+    active = [s for s in SITES if s.get("enabled", True)]
+    off = [s["name"] for s in SITES if not s.get("enabled", True)]
+    print(f"감시 중 {len(active)}곳: {', '.join(s['name'] for s in active)}")
+    if off:
+        print(f"꺼둔 사이트 {len(off)}곳: {', '.join(off)}")
 
     def work(site):
         try:
